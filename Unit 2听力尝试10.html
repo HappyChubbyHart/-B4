@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第二单元：听力理解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* 浅灰色背景 */
+        }
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #e5e7eb; /* Default tab color */
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            border-bottom: none; 
+            border-radius: 6px 6px 0 0;
+            font-weight: 500;
+            transition: background-color 0.3s, color 0.3s;
+            margin-right: -1px; 
+        }
+        .tab-button.active {
+            background-color: #3b82f6; /* Active tab blue */
+            color: white;
+            border-color: #3b82f6;
+        }
+        .tab-button:not(.active):hover {
+            background-color: #d1d5db;
+        }
+        .tab-content {
+            display: none; 
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        .intro-text-container {
+            background-color: #e0f2fe; 
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #bae6fd;
+        }
+        .intro-text-container h2 { 
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            color: #0c4a6e !important; 
+            margin-bottom: 8px !important;
+            padding-bottom: 0 !important;
+            border-bottom: none !important;
+        }
+        .intro-text-container p {
+            color: #0e7490; 
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+
+        .audio-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .playback-speed-controls {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 8px;
+        }
+        .speed-button {
+            background-color: #e5e7eb; 
+            color: #374151;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            border: 1px solid #d1d5db;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .speed-button:hover {
+            background-color: #d1d5db;
+        }
+        .speed-button.active {
+            background-color: #3b82f6; 
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .new-words-container {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .new-words-container h4 {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .word-entry {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .word-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .word-entry .term {
+            font-weight: 600;
+            color: #111827;
+        }
+        .word-entry .phonetic {
+            color: #6b7280;
+            margin-left: 8px;
+            font-style: italic;
+        }
+        .word-entry .definition {
+            color: #4b5563;
+            font-size: 0.95em;
+            margin-top: 4px;
+        }
+
+        .question-item {
+            margin-bottom: 20px; 
+            padding: 10px;
+            border-left: 4px solid #3b82f6; 
+            background-color: #eff6ff; 
+            border-radius: 6px;
+        }
+        .question-text { 
+            font-weight: 500;
+            color: #1f2937; 
+            margin-bottom: 8px;
+        }
+        .question-text-hidden { 
+            display: none;
+        }
+        .question-toggle-button {
+            background-color: #6b7280; 
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-bottom: 8px; 
+            display: inline-block;
+            border: none;
+            transition: background-color 0.2s;
+        }
+        .question-toggle-button:hover {
+            background-color: #4b5563; 
+        }
+        .option-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #4b5563; 
+            cursor: pointer;
+            padding: 8px 12px; 
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            border: 1px solid transparent; 
+        }
+        .option-label:hover:not(.disabled) { 
+            background-color: #dbeafe; 
+        }
+        .option-label input {
+            margin-right: 10px;
+        }
+        .option-label.correct {
+            background-color: #dcfce7 !important; 
+            border-color: #4ade80 !important;
+            color: #15803d !important;
+            font-weight: 500;
+        }
+        .option-label.incorrect {
+            background-color: #fee2e2 !important; 
+            border-color: #f87171 !important;
+            color: #b91c1c !important;
+            font-weight: 500;
+        }
+        .option-label.disabled { 
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .feedback-container {
+            margin-top: 12px;
+            padding: 10px;
+            background-color: #f0f9ff; 
+            border: 1px solid #cce7ff;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        .feedback-container h5 {
+            font-weight: 600;
+            color: #0c4a6e; 
+            margin-bottom: 5px;
+        }
+        .feedback-container p {
+            color: #075985;
+            line-height: 1.5;
+        }
+        .explanation-link { 
+            text-decoration: underline;
+            color: #075985; 
+            cursor: pointer;
+        }
+        .explanation-link:hover {
+            color: #0c4a6e; 
+        }
+
+        .takeaways-section { /* General style for takeaways */
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .takeaways-lc { /* Specific style for Long Conversation takeaways */
+            background-color: #eef2ff; /* Light indigo */
+            border: 1px solid #c7d2fe;
+        }
+        .takeaways-lc h4 {
+            color: #3730a3; /* Darker indigo */
+            border-bottom-color: #a5b4fc;
+        }
+        .takeaways-lc h5 {
+            color: #4f46e5; /* Indigo */
+        }
+        .takeaways-lc p, .takeaways-lc ul {
+            color: #4338ca;
+        }
+         .takeaways-lc strong {
+            color: #312e81;
+        }
+
+
+        .takeaways-passage { /* Specific style for Passage takeaways */
+            background-color: #f0fdf4; /* Light green */
+            border: 1px solid #bbf7d0;
+        }
+        .takeaways-passage h4 {
+            color: #15803d; /* Darker green */
+            border-bottom-color: #86efac;
+        }
+         .takeaways-passage h5 {
+            color: #16a34a; /* Green */
+        }
+        .takeaways-passage p, .takeaways-passage ul {
+            color: #166534;
+        }
+        .takeaways-passage strong {
+            color: #14532d;
+        }
+
+
+        .takeaways-section h4 { /* Common style for h4 in takeaways */
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom-width: 1px;
+        }
+        .takeaways-section h5 { /* Common style for h5 in takeaways */
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+        .takeaways-section p, .takeaways-section ul { /* Common style for p, ul in takeaways */
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .takeaways-section ul { /* Common style for ul in takeaways */
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        .takeaways-section li { /* Common style for li in takeaways */
+            margin-bottom: 5px;
+        }
+        .takeaways-section strong { /* Common style for strong in takeaways */
+            font-weight: 600;
+        }
+
+
+        .script-toggle-button {
+            background-color: #3b82f6; 
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            margin-top: 20px;
+            margin-bottom: 20px; 
+            display: inline-block;
+        }
+        .script-toggle-button:hover {
+            background-color: #2563eb; 
+        }
+        .script-content {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f9fafb; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 8px;
+            line-height: 1.7; 
+            color: #374151; 
+        }
+        .script-content p:not(.chart-title-p) { 
+            margin-bottom: 0.6em;
+        }
+        .script-charts-container { 
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb; 
+        }
+        .script-charts-container h5 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .chart-container { 
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 500px; 
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .chart-title-p { 
+            text-align: center;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        .d3-tooltip { 
+            position: absolute;
+            text-align: center;
+            padding: 6px 8px;
+            font-size: 0.85em;
+            background: #333;
+            color: white;
+            border: 0px;
+            border-radius: 4px;
+            pointer-events: none; 
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+
+        .hidden {
+            display: none;
+        }
+        .audio-container > h2 {
+            font-size: 1.75rem; 
+            font-weight: 700;
+            color: #111827; 
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        h3 { 
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-top: 20px;
+            margin-bottom: 15px; 
+        }
+        audio {
+            width: 100%;
+            margin-top: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .audio-label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .highlight { 
+            background-color: #fff0b3; 
+            font-weight: 600;
+            padding: 1px 3px;
+            border-radius: 3px;
+            box-decoration-break: clone; 
+            -webkit-box-decoration-break: clone; 
+        }
+        .source-highlight { 
+            background-color: #a7f3d0 !important; 
+            transition: background-color 0.3s ease-in-out;
+            border-radius: 3px;
+            padding: 1px 3px;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">第二单元：听力理解</h1>
+        <p class="text-center text-gray-600 mb-10">Interactive exercises to improve your listening skills.</p>
+
+        <div class="tab-container">
+            <button class="tab-button active" onclick="openTab(event, 'longConversationTab')">Long Conversation</button>
+            <button class="tab-button" onclick="openTab(event, 'passageListeningTab')">Passage Listening</button>
+        </div>
+
+        <div id="longConversationTab" class="tab-content active">
+            <div class="intro-text-container">
+                <h2>Long Conversation: Wishes and Wisdom</h2>
+                <p>Listen to (or read) the dialogue between Nancy and Uncle Charlie. Then, answer the multiple-choice questions to check your understanding of their conversation about life's true values.</p>
+            </div>
+            <div class="audio-container" id="long-conversation-container">
+                <span class="audio-label">对话音频:</span>
+                <audio id="audio-lc" controls src="https://cdn.jsdelivr.net/gh/HappyChubbyHart/-B4@main/B4U2_5_Further%20listening-Conversation.mp3">
+                    您的浏览器不支持音频元素。
+                </audio>
+                <div class="playback-speed-controls">
+                    <button class="speed-button" data-speed="0.75" data-player="audio-lc">0.75x</button>
+                    <button class="speed-button active" data-speed="1" data-player="audio-lc">正常</button>
+                    <button class="speed-button" data-speed="1.25" data-player="audio-lc">1.25x</button>
+                    <button class="speed-button" data-speed="1.5" data-player="audio-lc">1.5x</button>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">点击播放收听对话。播放时，对应文本会高亮显示。</p>
+
+                <button class="script-toggle-button" onclick="toggleScript('script-lc', '长对话')">显示长对话</button>
+                <div id="script-lc" class="script-content hidden">
+                </div>
+
+                <div class="questions-list">
+                    <h3>问题:</h3>
+                    <div class="question-item" data-question-id="q1_lc">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">1. What is one of the things the woman wishes for at first?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q1_lc" value="A"> A. Learning to swim.</label>
+                            <label class="option-label"><input type="radio" name="q1_lc" value="B"> B. Finding a well-paid job.</label>
+                            <label class="option-label"><input type="radio" name="q1_lc" value="C"> C. Seeing her husband soon.</label>
+                            <label class="option-label"><input type="radio" name="q1_lc" value="D"> D. Getting married in a big house.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                    <div class="question-item" data-question-id="q2_lc">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">2. What difficulties did the man experience in his life?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q2_lc" value="A"> A. He had a hard time keeping his marriage.</label>
+                            <label class="option-label"><input type="radio" name="q2_lc" value="B"> B. He got really sick and lost all his valuable things.</label>
+                            <label class="option-label"><input type="radio" name="q2_lc" value="C"> C. He lost his job and wealth and was sick for years.</label>
+                            <label class="option-label"><input type="radio" name="q2_lc" value="D"> D. He was unable to see his children due to poor health.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                    <div class="question-item" data-question-id="q3_lc">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">3. According to the man, why is true love important for a happy life?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q3_lc" value="A"> A. It helps one value little things in life.</label>
+                            <label class="option-label"><input type="radio" name="q3_lc" value="B"> B. It makes couples appreciate each other.</label>
+                            <label class="option-label"><input type="radio" name="q3_lc" value="C"> C. It gives people patience in their job search.</label>
+                            <label class="option-label"><input type="radio" name="q3_lc" value="D"> D. It makes people confident in pursuing their goals.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                    <div class="question-item" data-question-id="q4_lc">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">4. What is the purpose of the man striking up the conversation?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q4_lc" value="A"> A. To tell the woman an interesting life story.</label>
+                            <label class="option-label"><input type="radio" name="q4_lc" value="B"> B. To teach the woman skills to find a good job.</label>
+                            <label class="option-label"><input type="radio" name="q4_lc" value="C"> C. To encourage the woman to pursue a happy marriage.</label>
+                            <label class="option-label"><input type="radio" name="q4_lc" value="D"> D. To give the woman advice on the important things in life.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                </div>
+                <div class="takeaways-section takeaways-lc">
+                    <h4>长对话学习要点 (Key Takeaways from the Conversation)</h4>
+                    <h5>内容概要 (Content Summary)</h5>
+                    <ul>
+                        <li>Nancy 最初的愿望侧重于物质层面：高薪工作、英俊的丈夫和大房子。</li>
+                        <li>Uncle Charlie 通过分享自己人生中获得物质财富后又失去，并经历困境的经历，强调了真正价值在于其他方面。</li>
+                        <li>他建议 Nancy 许下三个不同的愿望：<strong>耐心 (patience)</strong>、<strong>勇气 (courage)</strong> 和 <strong>爱 (love)</strong>。</li>
+                        <li>耐心和勇气帮助人们克服困难并实现目标。</li>
+                        <li>真爱使伴侣关系无论岁月如何变迁都能保持美好。</li>
+                    </ul>
+                    <h5>重点词汇与表达 (Key Vocabulary & Expressions)</h5>
+                     <ul>
+                        <li><strong>high-paying job:</strong> 高薪工作</li>
+                        <li><strong>see things differently:</strong> 用不同的眼光看待事物，有不同的看法</li>
+                        <li><strong>That must have been rough!:</strong> 那一定很艰难/不容易！ (口语，表同情)</li>
+                        <li><strong>truly valuable:</strong> 真正有价值的</li>
+                        <li><strong>little by little:</strong> 一点一点地，逐渐地</li>
+                        <li><strong>get well:</strong> 身体康复</li>
+                        <li><strong>give up your goals easily:</strong> 轻易放弃目标</li>
+                        <li><strong>overcome any difficulties:</strong> 克服任何困难</li>
+                        <li><strong>no matter how...:</strong> 无论怎样... (例如: no matter how old you become)</li>
+                        <li><strong>get what you mean:</strong> 明白你的意思 (口语)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="passageListeningTab" class="tab-content">
+            <div class="intro-text-container">
+                <h2>Passage Listening: The Aging Population</h2>
+                <p>Listen to (or read) the passage about the global phenomenon of an aging population. Then, answer the multiple-choice questions to assess your comprehension of its societal impacts and challenges.</p>
+            </div>
+            <div class="audio-container" id="passage-container">
+                <span class="audio-label">生词朗读:</span>
+                <audio id="audio-passage-new-words" controls src="https://cdn.jsdelivr.net/gh/HappyChubbyHart/-B4@main/B4U2_6_Further%20listening-Passage-New%20words.mp3">
+                    您的浏览器不支持音频元素。
+                </audio>
+                <div class="playback-speed-controls">
+                    <button class="speed-button" data-speed="0.75" data-player="audio-passage-new-words">0.75x</button>
+                    <button class="speed-button active" data-speed="1" data-player="audio-passage-new-words">正常</button>
+                    <button class="speed-button" data-speed="1.25" data-player="audio-passage-new-words">1.25x</button>
+                    <button class="speed-button" data-speed="1.5" data-player="audio-passage-new-words">1.5x</button>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">点击播放收听短文中的生词。</p>
+                
+                <div class="new-words-container">
+                    <h4>重点词汇 (Key Vocabulary)</h4>
+                    <div class="word-entry">
+                        <span class="term">proportion</span> <span class="phonetic">/prəˈpɔːrʃən/</span>
+                        <p class="definition">部分，比例；指整体中某一部分所占的大小或数量。</p>
+                    </div>
+                    <div class="word-entry">
+                        <span class="term">index</span> <span class="phonetic">/ˈɪnˌdɛks/</span>
+                        <p class="definition">指数；索引；指示某种变化趋势的数值或参考标志。</p>
+                    </div>
+                    <div class="word-entry">
+                        <span class="term">triple</span> <span class="phonetic">/ˈtrɪpəl/</span>
+                        <p class="definition">三倍的；使成三倍；表示数量变为原来的三倍。</p>
+                    </div>
+                    <div class="word-entry">
+                        <span class="term">residential</span> <span class="phonetic">/ˌrɛzəˈdɛnʃəl/</span>
+                        <p class="definition">住宅的，居住的；与人们居住的地方有关。</p>
+                    </div>
+                    <div class="word-entry">
+                        <span class="term">ratio</span> <span class="phonetic">/ˈreɪʃiˌoʊ/</span>
+                        <p class="definition">比率；两个数值之间的关系，用于比较多少倍、多少份。</p>
+                    </div>
+                </div>
+
+                <span class="audio-label mt-6">短文朗读:</span>
+                <audio id="audio-passage" controls src="https://cdn.jsdelivr.net/gh/HappyChubbyHart/-B4@main/B4U2_6_Further%20listening-Passage.mp3">
+                    您的浏览器不支持音频元素。
+                </audio>
+                <div class="playback-speed-controls">
+                    <button class="speed-button" data-speed="0.75" data-player="audio-passage">0.75x</button>
+                    <button class="speed-button active" data-speed="1" data-player="audio-passage">正常</button>
+                    <button class="speed-button" data-speed="1.25" data-player="audio-passage">1.25x</button>
+                    <button class="speed-button" data-speed="1.5" data-player="audio-passage">1.5x</button>
+                </div>
+                <p class="text-sm text-gray-500 mb-4">点击播放收听短文。播放时，对应文本会高亮显示。</p>
+                
+                <button class="script-toggle-button" onclick="toggleScript('script-p', '短文与图表')">显示短文与图表</button>
+                <div id="script-p" class="script-content hidden"> 
+                    {/* VTT cues for Passage will be inserted here by JS */}
+                    <div class="script-charts-container">
+                        <h5>相关数据图表 (Relevant Data Charts)</h5>
+                        <div id="chart-population-60plus" class="chart-container"></div>
+                        <div id="chart-population-80plus" class="chart-container"></div>
+                        <div id="chart-support-ratio" class="chart-container"></div>
+                    </div>
+                </div>
+
+                <div class="questions-list">
+                    <h3>问题:</h3>
+                    <div class="question-item" data-question-id="q1_p">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">1. What is predicted about the human population in the next three decades?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q1_p" value="A"> A. The proportion of 15- to 50-year-olds will decrease slightly.</label>
+                            <label class="option-label"><input type="radio" name="q1_p" value="B"> B. The number of people aged 80 and above will increase by about 22%.</label>
+                            <label class="option-label"><input type="radio" name="q1_p" value="C"> C. The proportion of people aged 60 and above will increase significantly.</label>
+                            <label class="option-label"><input type="radio" name="q1_p" value="D"> D. The number of 12- to 22-year-olds will decrease by more than 420 million.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                    <div class="question-item" data-question-id="q2_p">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">2. What is one impact of an aging human population on society?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q2_p" value="A"> A. Economic productivity is constantly rising.</label>
+                            <label class="option-label"><input type="radio" name="q2_p" value="B"> B. The range of healthcare services is expanding.</label>
+                            <label class="option-label"><input type="radio" name="q2_p" value="C"> C. The pension system will be replaced in the near future.</label>
+                            <label class="option-label"><input type="radio" name="q2_p" value="D"> D. The ratio of working-age people to older people is decreasing.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                    <div class="question-item" data-question-id="q3_p">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">3. What may be a result of the population changes discussed in the passage?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q3_p" value="A"> A. Instability of housing prices.</label>
+                            <label class="option-label"><input type="radio" name="q3_p" value="B"> B. Changes in family structure.</label>
+                            <label class="option-label"><input type="radio" name="q3_p" value="C"> C. An increase in property taxation.</label>
+                            <label class="option-label"><input type="radio" name="q3_p" value="D"> D. A decrease in population mobility.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                     <div class="question-item" data-question-id="q4_p">
+                        <button class="question-toggle-button">点击显示题干</button>
+                        <p class="question-text question-text-hidden">4. What does human society need according to the speaker?</p>
+                        <div class="options-container">
+                            <label class="option-label"><input type="radio" name="q4_p" value="A"> A. Strong trade ties between countries around the world.</label>
+                            <label class="option-label"><input type="radio" name="q4_p" value="B"> B. Effective policies to reduce social and health costs.</label>
+                            <label class="option-label"><input type="radio" name="q4_p" value="C"> C. Necessary changes to address the needs of older people.</label>
+                            <label class="option-label"><input type="radio" name="q4_p" value="D"> D. Rich resources to maintain the traditional family structure.</label>
+                        </div>
+                        <div class="feedback-container hidden"></div>
+                    </div>
+                </div>
+                <div class="takeaways-section takeaways-passage">
+                    <h4>短文学习要点 (Key Issues and Impacts of Population Aging)</h4>
+                     <h5>核心观点与数据 (Core Points & Data)</h5>
+                    <ul>
+                        <li>全球人口老龄化是一个不容忽视的趋势，60岁以上人口比例预计从2015年的12%增至2050年的22%。</li>
+                        <li>80岁以上人口数量预计在2020至2050年间增长三倍，达到约4.26亿。</li>
+                        <li>“潜在支持比率”（劳动年龄人口与老年人口之比）持续下降，从1950年的10.1降至2020年的6.1，预计2050年降至3。</li>
+                    </ul>
+                    <h5>主要影响与挑战 (Key Impacts & Challenges)</h5>
+                    <ul>
+                        <li>年轻一代在经济和社会上的负担加重，因为他们需要供养老年人并保障养老金、医疗和社会成本。</li>
+                        <li>人口“年龄结构地震”可能引发家庭构成、税收、住房（如养老院需求增加）等领域的问题。</li>
+                        <li>人口流动性增加可能削弱传统家庭结构。</li>
+                        <li>人口老龄化对全球的政策制定者、经济学家和医疗专家构成挑战。</li>
+                    </ul>
+                    <h5>结论与展望 (Conclusion & Outlook)</h5>
+                    <ul>
+                        <li>人类社会需要进行结构性转变，以具备能力和资源来满足老年人多样化的需求。</li>
+                    </ul>
+                    <h5>重点词汇与表达 (Key Vocabulary & Expressions)</h5>
+                    <ul>
+                        <li><strong>aging of the human population:</strong> 人口老龄化</li>
+                        <li><strong>proportion:</strong> 比例，部分</li>
+                        <li><strong>triple:</strong> 增长三倍</li>
+                        <li><strong>profound impacts:</strong> 深远的影响</li>
+                        <li><strong>ratio:</strong> 比率</li>
+                        <li><strong>potential support ratio:</strong> 潜在支持比率</li>
+                        <li><strong>index:</strong> 指数</li>
+                        <li><strong>burden:</strong> 负担</li>
+                        <li><strong>economic productivity:</strong> 经济生产力</li>
+                        <li><strong>family composition:</strong> 家庭构成</li>
+                        <li><strong>originate from:</strong> 起源于</li>
+                        <li><strong>population age-quake:</strong> 人口年龄结构地震（比喻说法）</li>
+                        <li><strong>mobility:</strong> 流动性</li>
+                        <li><strong>residential and nursing homes:</strong> 住宅和养老院</li>
+                        <li><strong>policy makers:</strong> 政策制定者</li>
+                        <li><strong>address the diverse needs:</strong> 满足多样化的需求</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="d3-tooltip"></div> {/* Tooltip div */}
+    </div>
+
+    <script>
+        // Function to open a tab
+        function openTab(event, tabName) {
+            let i, tabcontent, tabbuttons;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tabbuttons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabbuttons.length; i++) {
+                tabbuttons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            event.currentTarget.classList.add("active");
+        }
+
+        let chartsDrawn = false; // Flag to track if D3 charts have been drawn
+
+        // 用于切换脚本内容可见性的JavaScript函数
+        function toggleScript(scriptId, scriptName = '文本') { 
+            const scriptElement = document.getElementById(scriptId);
+            const buttonElement = event.target; 
+            if (scriptElement) {
+                const isHidden = scriptElement.classList.toggle('hidden');
+                buttonElement.textContent = isHidden ? `显示${scriptName}` : `隐藏${scriptName}`;
+                
+                if (scriptId === 'script-p' && !isHidden && !chartsDrawn) {
+                    drawPassageCharts();
+                    chartsDrawn = true; 
+                }
+            }
+        }
+
+        // 用于切换问题题干可见性的JavaScript函数
+        function toggleQuestionStem(buttonElement) {
+            const questionTextElement = buttonElement.nextElementSibling; 
+            if (questionTextElement && questionTextElement.classList.contains('question-text')) {
+                questionTextElement.classList.toggle('question-text-hidden');
+                buttonElement.textContent = questionTextElement.classList.contains('question-text-hidden') ? '点击显示题干' : '点击隐藏题干';
+            }
+        }
+
+        // 长对话VTT字幕数据
+        const longConversationCues = [
+            { id: "cue-lc-0", startTime: 12.060, endTime: 28.780, text: "M: Nancy, if you had a chance to make three wishes, what would they be?\nW: Hmm … I want a high-paying job, a handsome husband, and a big house … with a swimming pool!\nM: Wow, Nancy. Those are your three wishes?" },
+            { id: "cue-lc-1", startTime: 29.660, endTime: 44.040, text: "W: Of course! If I have those three things, I’ll be happy!\nM: Now, Nancy. Let me tell you my story, and you may see things differently afterward.\nW: See things differently? What do you mean, Uncle Charlie?" },
+            { id: "cue-lc-2", startTime: 44.720, endTime: 60.140, text: "M: Here is what I once experienced in life. When I married 32 years ago, we had a happy marriage, a beautiful house, two expensive cars, and $200,000 in the bank!\nW: See, just like now!" },
+            { id: "cue-lc-3", startTime: 60.900, endTime: 74.460, text: "M: But that is not the whole story. Within six years of our marriage, we had three beautiful children, but we lost our jobs, our house, and all our money, and then I got really sick for nine years." },
+            { id: "cue-lc-4", startTime: 74.460, endTime: 89.060, text: "W: Oh, Uncle Charlie. That must have been rough!\nM: Yes, it was. But we didn’t lose anything truly valuable, because we always said, “Wherever the five of us are together, that’s home!”" },
+            { id: "cue-lc-5", startTime: 89.800, endTime: 106.440, text: "M: And, little by little, things did improve, and I finally got well. So, I would suggest you make three different wishes.\nW: What would those be? I am eager to hear.\nM: Well … I suggest these three wishes:" },
+            { id: "cue-lc-6", startTime: 107.320, endTime: 125.240, text: "M: Patience, courage, and love!\nW: Patience, courage, and love?\nM: Yes! These are what make life full, strong, and happy! If you have patience and courage, you won’t give up your goals easily, and you can overcome any difficulties." },
+            { id: "cue-lc-7", startTime: 126.060, endTime: 140.220, text: "M: Hence, you will get what you really want in life.\nW: This is good. What about love?\nM: If you have true love, you and your husband will be beautiful to each other no matter how old you become." },
+            { id: "cue-lc-8", startTime: 140.860, endTime: 148.400, text: "W: I am starting to get what you mean. I will remember. Patience, courage, and love! Thanks, Uncle Charlie!" }
+        ];
+
+        // 短文VTT字幕数据
+        const passageCues = [
+            { id: "cue-p-0", startTime: 12.370, endTime: 23.810, text: "Of all the threats to human society, including war, disease and natural disaster, one cannot be ignored. It is the aging of the human population." },
+            { id: "cue-p-1", startTime: 25.230, endTime: 50.690, text: "It is estimated that the proportion of the world's population aged over 60 years will nearly double between 2015 and 2050, increasing from 12% to 22%. The number of people aged 80 years or older is expected to triple between 2020 and 2050 to reach about 426 million." },
+            { id: "cue-p-2", startTime: 52.030, endTime: 65.250, text: "This change will have profound impacts on human society. One problem concerns the ratio of the number of working-age people to the number of older people, which is known as the potential support ratio." },
+            { id: "cue-p-3", startTime: 65.849, endTime: 81.770, text: "This index has fallen from 10.1 in 1950 to 6.1 in 2020 and is expected to drop to 3 in 2050. Its decline means that the burden on the young economically and socially will rise accordingly." },
+            { id: "cue-p-4", startTime: 82.310, endTime: 94.310, text: "This is because older people rely on the young not only for care and support but also for the economic productivity that ensures pensions can be paid and health and social costs can be met." },
+            { id: "cue-p-5", startTime: 95.590, endTime: 114.030, text: "A variety of issues in other areas such as family composition, taxation, and housing may originate from the population age quake too. For instance, increased mobility may weaken the traditional family structure and the The demand for residential and nursing homes will increase." }, 
+            { id: "cue-p-6", startTime: 115.690, endTime: 127.010, text: "No matter what the future reality will be, the aging of the human population certainly presents a challenge to policy makers, economists, and health care specialists around the world." },
+            { id: "cue-p-7", startTime: 127.610, endTime: 137.050, text: "This suggests that human society will need to be transformed into a structure that has the ability and resources to address the diverse needs of older people." }
+        ];
+        
+        // 答案和解析数据
+        const correctAnswersData = {
+            "q1_lc": { answer: "B", explanation: "W: Hmm … I want a high-paying job, a handsome husband, and a big house … with a swimming pool!", targetCueId: "cue-lc-0" },
+            "q2_lc": { answer: "C", explanation: "M: ...we lost our jobs, our house, and all our money, and then I got really sick for nine years.", targetCueId: "cue-lc-3" },
+            "q3_lc": { answer: "B", explanation: "M: If you have true love, you and your husband will be beautiful to each other no matter how old you become.", targetCueId: "cue-lc-7" },
+            "q4_lc": { answer: "D", explanation: "男士通过分享自己的经历，并对比自己曾经拥有的物质财富和后来遭遇的困境，最终强调家庭和内在品质（耐心、勇气、爱）的重要性。他主动引导女士思考“三个愿望”，并提出自己的建议，其目的是想在人生观和价值观这些重要的事情上给予女士启发和忠告。" }, 
+
+            "q1_p": { answer: "C", explanation: "It is estimated that the proportion of the world’s population aged over 60 years will nearly double between 2015 and 2050, increasing from 12 percent to 22 percent.", targetCueId: "cue-p-1" },
+            "q2_p": { answer: "D", explanation: "One problem concerns the ratio of the number of working-age people to the number of older people, which is known as the “potential support ratio”. This index has fallen from 10.1 in 1950 to 6.1 in 2020 and is expected to drop to 3 in 2050.", targetCueId: "cue-p-3" },
+            "q3_p": { answer: "B", explanation: "A variety of issues in other areas, such as family composition, taxation, and housing, may originate from the population age quake too.", targetCueId: "cue-p-5" },
+            "q4_p": { answer: "C", explanation: "This suggests that human society will need to be transformed into a structure that has the ability and resources to address the diverse needs of older people.", targetCueId: "cue-p-7" }
+        };
+
+        // Function to scroll to source and highlight
+        function scrollToSource(targetId, targetType) {
+            let scriptContainerId;
+            let scriptButton;
+            let scriptName;
+            let targetElement;
+
+            if (targetType === 'lc') {
+                scriptContainerId = 'script-lc';
+                scriptName = '长对话';
+                targetElement = document.getElementById(targetId);
+            } else if (targetType === 'passage') {
+                scriptContainerId = 'script-p';
+                scriptName = '短文与图表'; 
+                targetElement = document.getElementById(targetId);
+            } else {
+                return; 
+            }
+            
+            const scriptContainer = document.getElementById(scriptContainerId);
+            if (scriptContainerId === 'script-lc') {
+                scriptButton = document.querySelector(`button[onclick="toggleScript('script-lc', '长对话')"]`);
+            } else {
+                scriptButton = document.querySelector(`button[onclick="toggleScript('script-p', '短文与图表')"]`);
+            }
+
+            if (scriptContainer && targetElement) {
+                if (scriptContainer.classList.contains('hidden')) {
+                    scriptContainer.classList.remove('hidden');
+                    if(scriptButton) scriptButton.textContent = `隐藏${scriptName}`;
+                    if (scriptContainerId === 'script-p' && !chartsDrawn) { 
+                        drawPassageCharts();
+                        chartsDrawn = true;
+                    }
+                }
+                
+                document.querySelectorAll('.source-highlight').forEach(el => el.classList.remove('source-highlight'));
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetElement.classList.add('source-highlight');
+                setTimeout(() => {
+                    targetElement.classList.remove('source-highlight');
+                }, 3000); 
+            }
+        }
+
+        // --- D3 Chart Drawing Functions ---
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "d3-tooltip");
+
+        function drawPopulation60PlusChart() {
+            const data = [ { year: "2015", value: 12 }, { year: "2050 (Est.)", value: 22 } ];
+            const container = "#chart-population-60plus";
+            d3.select(container).html(""); 
+             const titleP = d3.select(container).append("p").attr("class", "chart-title-p").text("60岁以上人口比例 (%)");
+
+
+            const margin = {top: 20, right: 30, bottom: 40, left: 40},
+                  width = Math.min(500, window.innerWidth - 80) - margin.left - margin.right, 
+                  height = 300 - margin.top - margin.bottom;
+
+            const svg = d3.select(container)
+              .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand().range([0, width]).domain(data.map(d => d.year)).padding(0.4);
+            svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+
+            const y = d3.scaleLinear().domain([0, 25]).range([ height, 0]);
+            svg.append("g").call(d3.axisLeft(y));
+
+            svg.selectAll("rect")
+              .data(data)
+              .join("rect")
+                .attr("x", d => x(d.year))
+                .attr("y", d => y(d.value))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d.value))
+                .attr("fill", "#fca5a5") 
+                .on("mouseover", function(event, d) {
+                    tooltip.transition().duration(200).style("opacity", .9);
+                    tooltip.html(`年份: ${d.year}<br/>比例: ${d.value}%`)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                    d3.select(this).attr("fill", "#ef4444"); 
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                    d3.select(this).attr("fill", "#fca5a5");
+                });
+        }
+
+        function drawPopulation80PlusChart() {
+            const data = [ { year: "2020", value: 142 }, { year: "2050 (Est.)", value: 426 } ]; 
+            const container = "#chart-population-80plus";
+            d3.select(container).html("");
+            const titleP = d3.select(container).append("p").attr("class", "chart-title-p").text("80岁以上人口数量 (百万)");
+
+
+            const margin = {top: 20, right: 30, bottom: 40, left: 50},
+                  width = Math.min(500, window.innerWidth - 80) - margin.left - margin.right,
+                  height = 300 - margin.top - margin.bottom;
+
+            const svg = d3.select(container)
+              .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand().range([0, width]).domain(data.map(d => d.year)).padding(0.4);
+            svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+
+            const y = d3.scaleLinear().domain([0, 450]).range([height, 0]);
+            svg.append("g").call(d3.axisLeft(y));
+
+            svg.selectAll("rect")
+              .data(data)
+              .join("rect")
+                .attr("x", d => x(d.year))
+                .attr("y", d => y(d.value))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d.value))
+                .attr("fill", "#6ee7b7") 
+                .on("mouseover", function(event, d) {
+                    tooltip.transition().duration(200).style("opacity", .9);
+                    tooltip.html(`年份: ${d.year}<br/>数量: ${d.value} 百万`)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                    d3.select(this).attr("fill", "#10b981"); 
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                    d3.select(this).attr("fill", "#6ee7b7");
+                });
+        }
+
+        function drawSupportRatioChart() {
+            const data = [ { year: "1950", value: 10.1 }, { year: "2020", value: 6.1 }, { year: "2050 (Est.)", value: 3 } ];
+            const container = "#chart-support-ratio";
+            d3.select(container).html("");
+            const titleP = d3.select(container).append("p").attr("class", "chart-title-p").text("潜在支持比率");
+
+
+            const margin = {top: 20, right: 30, bottom: 40, left: 40},
+                  width = Math.min(500, window.innerWidth - 80) - margin.left - margin.right,
+                  height = 300 - margin.top - margin.bottom;
+
+            const svg = d3.select(container)
+              .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scalePoint().range([0, width]).domain(data.map(d => d.year)).padding(0.5);
+            svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
+
+            const y = d3.scaleLinear().domain([0, 12]).range([height, 0]);
+            svg.append("g").call(d3.axisLeft(y));
+
+            svg.append("path")
+              .datum(data)
+              .attr("fill", "none")
+              .attr("stroke", "#818cf8") 
+              .attr("stroke-width", 2.5)
+              .attr("d", d3.line()
+                .x(d => x(d.year))
+                .y(d => y(d.value))
+              );
+
+            svg.selectAll("circle")
+              .data(data)
+              .join("circle")
+                .attr("cx", d => x(d.year))
+                .attr("cy", d => y(d.value))
+                .attr("r", 5)
+                .attr("fill", "#6366f1") 
+                .on("mouseover", function(event, d) {
+                    tooltip.transition().duration(200).style("opacity", .9);
+                    tooltip.html(`年份: ${d.year}<br/>比率: ${d.value}`)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                    d3.select(this).attr("r", 7).attr("fill", "#4f46e5"); 
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                    d3.select(this).attr("r", 5).attr("fill", "#6366f1");
+                });
+        }
+
+        function drawPassageCharts() {
+            drawPopulation60PlusChart();
+            drawPopulation80PlusChart();
+            drawSupportRatioChart();
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const scriptLcContainer = document.getElementById('script-lc');
+            const audioLc = document.getElementById('audio-lc');
+            const scriptPContainer = document.getElementById('script-p');
+            const audioPassage = document.getElementById('audio-passage');
+
+
+            document.querySelectorAll('.question-toggle-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    toggleQuestionStem(this);
+                });
+                const questionTextElement = button.nextElementSibling;
+                if (questionTextElement && questionTextElement.classList.contains('question-text')) {
+                    questionTextElement.classList.add('question-text-hidden');
+                }
+            });
+
+            document.querySelectorAll('.speed-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const playerElement = document.getElementById(this.dataset.player);
+                    if (playerElement) {
+                        playerElement.playbackRate = parseFloat(this.dataset.speed);
+                        this.parentElement.querySelectorAll('.speed-button').forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+
+            // Populate and set up Long Conversation script
+            if (scriptLcContainer && audioLc) {
+                scriptLcContainer.innerHTML = ''; 
+                longConversationCues.forEach(cueData => {
+                    const p = document.createElement('p');
+                    const span = document.createElement('span');
+                    span.id = cueData.id; 
+                    span.style.whiteSpace = 'pre-line'; 
+                    span.textContent = cueData.text;
+                    cueData.element = span; 
+                    p.appendChild(span);
+                    scriptLcContainer.appendChild(p);
+                });
+
+                audioLc.addEventListener('timeupdate', () => {
+                    const currentTime = audioLc.currentTime;
+                    longConversationCues.forEach(cueData => {
+                        if (cueData.element) { 
+                            if (currentTime >= cueData.startTime && currentTime <= cueData.endTime) {
+                                cueData.element.classList.add('highlight');
+                            } else {
+                                cueData.element.classList.remove('highlight');
+                            }
+                        }
+                    });
+                });
+            } else {
+                if (!scriptLcContainer) console.error("脚本容器 'script-lc' 未找到。");
+                if (!audioLc) console.error("长对话音频播放器 'audio-lc' 未找到。");
+            }
+
+            // Populate and set up Passage script
+            if (scriptPContainer && audioPassage) {
+                const chartsContainer = scriptPContainer.querySelector('.script-charts-container');
+                let firstChild = scriptPContainer.firstChild;
+                while (firstChild && firstChild !== chartsContainer) {
+                    scriptPContainer.removeChild(firstChild);
+                    firstChild = scriptPContainer.firstChild;
+                }
+
+                passageCues.forEach(cueData => {
+                    const p = document.createElement('p');
+                    const span = document.createElement('span');
+                    span.id = cueData.id; 
+                    span.style.whiteSpace = 'pre-line'; 
+                    span.textContent = cueData.text;
+                    cueData.element = span; 
+                    p.appendChild(span);
+                    if (chartsContainer) {
+                        scriptPContainer.insertBefore(p, chartsContainer);
+                    } else {
+                        scriptPContainer.appendChild(p); 
+                    }
+                });
+
+                audioPassage.addEventListener('timeupdate', () => {
+                    const currentTime = audioPassage.currentTime;
+                    passageCues.forEach(cueData => {
+                        if (cueData.element) {
+                            if (currentTime >= cueData.startTime && currentTime <= cueData.endTime) {
+                                cueData.element.classList.add('highlight');
+                            } else {
+                                cueData.element.classList.remove('highlight');
+                            }
+                        }
+                    });
+                });
+            } else {
+                if (!scriptPContainer) console.error("脚本容器 'script-p' 未找到。");
+                if (!audioPassage) console.error("短文朗读音频播放器 'audio-passage' 未找到。");
+            }
+
+
+            // Set up answer checking logic (common for all questions)
+            document.querySelectorAll('.question-item').forEach(questionItem => {
+                const questionId = questionItem.dataset.questionId;
+                const radioInputs = questionItem.querySelectorAll('input[type="radio"]');
+                const feedbackDiv = questionItem.querySelector('.feedback-container');
+                const optionLabels = questionItem.querySelectorAll('.option-label');
+
+                radioInputs.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        const selectedValue = this.value;
+                        const correctAnswerInfo = correctAnswersData[questionId];
+
+                        radioInputs.forEach(r => {
+                            r.disabled = true;
+                            r.parentElement.classList.add('disabled'); 
+                        });
+                        
+                        optionLabels.forEach(label => {
+                            const radioInput = label.querySelector('input[type="radio"]');
+                            if (radioInput.value === correctAnswerInfo.answer) {
+                                label.classList.add('correct'); 
+                            }
+                            if (radioInput.checked) { 
+                                if (radioInput.value !== correctAnswerInfo.answer) {
+                                    label.classList.add('incorrect'); 
+                                }
+                            }
+                        });
+                        
+                        if (feedbackDiv) {
+                            const targetId = correctAnswerInfo.targetCueId; 
+                            const targetType = questionId.includes('_lc') ? 'lc' : 'passage';
+                            
+                            let explanationHTML = `<h5>解析 (Explanation):</h5><p>`;
+                            if (targetId) { 
+                                explanationHTML += `<a href="#" class="explanation-link" data-target-id="${targetId}" data-target-type="${targetType}">
+                                                        ${correctAnswerInfo.explanation}
+                                                    </a>`;
+                            } else { 
+                                explanationHTML += correctAnswerInfo.explanation;
+                            }
+                            explanationHTML += `</p>`;
+                            feedbackDiv.innerHTML = explanationHTML;
+                            feedbackDiv.classList.remove('hidden');
+
+                            const explanationLink = feedbackDiv.querySelector('.explanation-link');
+                            if (explanationLink) {
+                                explanationLink.addEventListener('click', function(e) {
+                                    e.preventDefault(); 
+                                    scrollToSource(this.dataset.targetId, this.dataset.targetType);
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
